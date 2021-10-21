@@ -1,45 +1,47 @@
 const canvasRed = new Color("#F64453");
-const smallWidgetConfig = {
-  titleFontSize: 12,
-  gradeFontSize: 14,
-  scoreFontSize: 12,
-  footerFontSize: 6,
-  courseFontSize: 11,
-  horizontalSpace: 6,
-  listSpacerThreshold: 5, // anything larger will not have spacers between list items
-  stackSpacerThreshold: 7, // anything larger will not have spacers between title, list, footer
+const configs = {
+  small: {
+    titleFontSize: 12,
+    gradeFontSize: 14,
+    scoreFontSize: 12,
+    footerFontSize: 6,
+    courseFontSize: 11,
+    horizontalSpace: 6,
+    listSpacerThreshold: 5, // anything larger will not have spacers between list items
+    stackSpacerThreshold: 7, // anything larger will not have spacers between title, list, footer
+  },
+  medium: {
+    titleFontSize: 24,
+    gradeFontSize: 28,
+    scoreFontSize: 24,
+    footerFontSize: 12,
+    courseFontSize: 22,
+    horizontalSpace: 12,
+    spacers: false,
+  },
+  large: {
+    titleFontSize: 24,
+    gradeFontSize: 28,
+    scoreFontSize: 24,
+    footerFontSize: 12,
+    courseFontSize: 22,
+    horizontalSpace: 12,
+    listSpacerThreshold: 7,
+    stackSpacerThreshold: 8,
+  },
 };
-const mediumWidgetConfig = {
-  titleFontSize: 24,
-  gradeFontSize: 28,
-  scoreFontSize: 24,
-  footerFontSize: 12,
-  courseFontSize: 22,
-  horizontalSpace: 12,
-  spacers: false,
-};
-const largeWidgetConfig = {
-  titleFontSize: 24,
-  gradeFontSize: 28,
-  scoreFontSize: 24,
-  footerFontSize: 12,
-  courseFontSize: 22,
-  horizontalSpace: 12,
-  listSpacerThreshold: 7,
-  stackSpacerThreshold: 8,
-};
-const createWidget = async ({
-  titleFontSize,
-  gradeFontSize,
-  scoreFontSize,
-  footerFontSize,
-  courseFontSize,
-  horizontalSpace,
-  listSpacerThreshold,
-  stackSpacerThreshold,
-}) => {
+
+const createWidget = async (type, size) => {
+  const {
+    stackSpacerThreshold,
+    titleFontSize,
+    listSpacerThreshold,
+    footerFontSize,
+  } = configs[type];
   // create widget
   const widget = new ListWidget();
+  let mainStack = widget.addStack();
+  mainStack.layoutVertically();
 
   // get data and filter to courses with grades and scores
   const courseData = await getData();
@@ -49,19 +51,38 @@ const createWidget = async ({
   const numCourses = coursesToDisplay.length;
 
   // create title
-  const title = widget.addText("Canvas Grades");
+  const title = mainStack.addText("Canvas Grades");
   if (numCourses <= stackSpacerThreshold) {
-    widget.addSpacer();
+    mainStack.addSpacer();
   }
   title.textColor = canvasRed;
   title.font = Font.boldSystemFont(titleFontSize);
 
+  createList(mainStack, coursesToDisplay, type);
+  if (numCourses > listSpacerThreshold && numCourses <= stackSpacerThreshold) {
+    mainStack.addSpacer();
+  }
+  const footer = mainStack.addText(
+    `Last updated at ${new Date().toLocaleString()}`
+  );
+  footer.font = Font.lightSystemFont(footerFontSize);
+  footer.textColor = Color.lightGray();
+  return widget;
+};
+const createList = (mainStack, courses, type) => {
+  const {
+    listSpacerThreshold,
+    gradeFontSize,
+    horizontalSpace,
+    scoreFontSize,
+    courseFontSize,
+  } = configs[type];
   // create list
-  for (const course of coursesToDisplay) {
+  for (const course of courses) {
     if (!course.current_grade && !course.current_score) continue;
-    const stack = widget.addStack();
-    if (numCourses <= listSpacerThreshold) {
-      widget.addSpacer();
+    const stack = mainStack.addStack();
+    if (courses.length <= listSpacerThreshold) {
+      mainStack.addSpacer();
     }
     if (course.current_grade) {
       const text = stack.addText(course.current_grade);
@@ -79,15 +100,6 @@ const createWidget = async ({
     text.textColor = Color.gray();
     stack.bottomAlignContent();
   }
-  if (numCourses > listSpacerThreshold && numCourses <= stackSpacerThreshold) {
-    widget.addSpacer();
-  }
-  const footer = widget.addText(
-    `Last updated at ${new Date().toLocaleString()}`
-  );
-  footer.font = Font.lightSystemFont(footerFontSize);
-  footer.textColor = Color.lightGray();
-  return widget;
 };
 
 const BASE_URL = "https://sjusd.instructure.com";
@@ -128,16 +140,11 @@ const getData = async () => {
   return filteredData;
 };
 
-let sizedConfig = largeWidgetConfig;
-if (config.widgetFamily === "small") {
-  sizedConfig = smallWidgetConfig;
-} else if (config.widgetFamily === "medium") {
-  sizedConfig = mediumWidgetConfig;
-} else if (!config.widgetFamily) {
-  sizedConfig = smallWidgetConfig;
+let size = config.widgetFamily;
+if (!config.widgetFamily) {
+  size = "small";
 }
-
-const w = await createWidget(sizedConfig);
+const w = await createWidget(size);
 if (!config.runsInWidget) {
   await w.presentSmall();
 }
