@@ -1,45 +1,68 @@
 const canvasRed = new Color("#F64453");
 const smallWidgetConfig = {
-  titleFontSize: 24,
-  gradeFontSize: 28,
-  scoreFontSize: 24,
-  courseFontSize: 22,
-  horizontalSpace: 12,
+  titleFontSize: 12,
+  gradeFontSize: 14,
+  scoreFontSize: 12,
+  footerFontSize: 6,
+  courseFontSize: 11,
+  horizontalSpace: 6,
+  listSpacerThreshold: 5, // anything larger will not have spacers between list items
+  stackSpacerThreshold: 7, // anything larger will not have spacers between title, list, footer
 };
 const mediumWidgetConfig = {
   titleFontSize: 24,
   gradeFontSize: 28,
   scoreFontSize: 24,
+  footerFontSize: 12,
   courseFontSize: 22,
   horizontalSpace: 12,
+  spacers: false,
 };
 const largeWidgetConfig = {
   titleFontSize: 24,
   gradeFontSize: 28,
   scoreFontSize: 24,
+  footerFontSize: 12,
   courseFontSize: 22,
   horizontalSpace: 12,
+  listSpacerThreshold: 7,
+  stackSpacerThreshold: 8,
 };
 const createWidget = async ({
   titleFontSize,
   gradeFontSize,
   scoreFontSize,
+  footerFontSize,
   courseFontSize,
   horizontalSpace,
+  listSpacerThreshold,
+  stackSpacerThreshold,
 }) => {
+  // create widget
   const widget = new ListWidget();
-  // const backgroundColor = new Color("#ec3750");
-  // widget.backgroundColor = backgroundColor;
-  // widget.addSpacer(null);
+
+  // get data and filter to courses with grades and scores
+  const courseData = await getData();
+  const coursesToDisplay = courseData.filter(
+    (x) => x.current_score || x.current_grade
+  );
+  const numCourses = coursesToDisplay.length;
+
+  // create title
   const title = widget.addText("Canvas Grades");
-  widget.addSpacer(null);
+  if (numCourses <= stackSpacerThreshold) {
+    widget.addSpacer();
+  }
   title.textColor = canvasRed;
   title.font = Font.boldSystemFont(titleFontSize);
-  const courseData = await getData();
-  for (const course of courseData) {
+
+  // create list
+  for (const course of coursesToDisplay) {
     if (!course.current_grade && !course.current_score) continue;
     const stack = widget.addStack();
-    widget.addSpacer(null);
+    if (numCourses <= listSpacerThreshold) {
+      widget.addSpacer();
+    }
     if (course.current_grade) {
       const text = stack.addText(course.current_grade);
       text.font = Font.semiboldSystemFont(gradeFontSize);
@@ -56,11 +79,13 @@ const createWidget = async ({
     text.textColor = Color.gray();
     stack.bottomAlignContent();
   }
+  if (numCourses > listSpacerThreshold && numCourses <= stackSpacerThreshold) {
+    widget.addSpacer();
+  }
   const footer = widget.addText(
     `Last updated at ${new Date().toLocaleString()}`
   );
-  // widget.addSpacer(null);
-  footer.font = Font.footnote();
+  footer.font = Font.lightSystemFont(footerFontSize);
   footer.textColor = Color.lightGray();
   return widget;
 };
@@ -86,6 +111,20 @@ const getData = async () => {
     current_grade: course.enrollments[0].computed_current_grade,
     current_score: course.enrollments[0].computed_current_score,
   }));
+  /*
+  const mockData = [
+    { name: "asdf", current_grade: "A", current_score: 100 },
+    { name: "asdf", current_grade: "A", current_score: 100 },
+    { name: "asdf", current_grade: "A", current_score: 100 },
+    { name: "asdf", current_grade: "A", current_score: 100 },
+    { name: "asdf", current_grade: "A", current_score: 100 },
+    { name: "asdf", current_grade: "A", current_score: 100 },
+    { name: "asdf", current_grade: "A", current_score: 100 },
+    { name: "asdf", current_grade: "A", current_score: 100 },
+    { name: "asdf", current_grade: "A", current_score: 100 },
+  ];
+  return mockData;
+  */
   return filteredData;
 };
 
@@ -94,11 +133,13 @@ if (config.widgetFamily === "small") {
   sizedConfig = smallWidgetConfig;
 } else if (config.widgetFamily === "medium") {
   sizedConfig = mediumWidgetConfig;
+} else if (!config.widgetFamily) {
+  sizedConfig = smallWidgetConfig;
 }
 
 const w = await createWidget(sizedConfig);
 if (!config.runsInWidget) {
-  await w.presentLarge();
+  await w.presentSmall();
 }
 Script.setWidget(w);
 Script.complete();
