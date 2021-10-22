@@ -11,10 +11,10 @@ const configs = {
     stackSpacerThreshold: 7, // anything larger will not have spacers between title, list, footer
   },
   medium: {
-    titleFontSize: 24,
+    titleFontSize: 18,
     gradeFontSize: 14,
     scoreFontSize: 12,
-    footerFontSize: 12,
+    footerFontSize: 8,
     courseFontSize: 11,
     horizontalSpace: 6,
     listSpacerThreshold: 5,
@@ -75,6 +75,13 @@ const createWidget = async (type) => {
     console.log(secondList);
     createList(firstStack, firstList, type);
     createList(secondStack, secondList, type);
+    if (coursesToDisplay.length % 2 === 1) {
+      const s = secondStack.addStack();
+      s.addText(" ");
+      if (secondList.length <= listSpacerThreshold) {
+        secondStack.addSpacer();
+      }
+    }
   } else {
     createList(mainStack, coursesToDisplay, type);
   }
@@ -146,10 +153,6 @@ const getData = async () => {
   }));
   /*
   const mockData = [
-    { name: "asdf", current_grade: "A", current_score: 100 },
-    { name: "asdf", current_grade: "A", current_score: 100 },
-    { name: "asdf", current_grade: "A", current_score: 100 },
-    { name: "asdf", current_grade: "A", current_score: 100 },
     { name: "asdf", current_grade: "A", current_score: 100 },
     { name: "asdf", current_grade: "A", current_score: 100 },
     { name: "asdf", current_grade: "A", current_score: 100 },
