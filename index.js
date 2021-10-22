@@ -41,6 +41,8 @@ const createWidget = async (type) => {
   } = configs[type];
   // create widget
   const widget = new ListWidget();
+  widget.url =
+    URLScheme.forRunningScript() + "?token=" + TOKEN + "&size=" + type;
   let mainStack = widget.addStack();
   mainStack.layoutVertically();
 
@@ -59,20 +61,23 @@ const createWidget = async (type) => {
   title.textColor = canvasRed;
   title.font = Font.boldSystemFont(titleFontSize);
 
-  console.log(type);
   if (type === "medium") {
     const half = Math.ceil(coursesToDisplay.length / 2);
-    console.log(half.toString());
     const firstList = coursesToDisplay.slice(0, half);
     const secondList = coursesToDisplay.slice(half);
+    if (coursesToDisplay.length % 2 === 1) {
+      secondList.push({
+        name: " ",
+        current_score: "",
+        current_grade: "",
+      });
+    }
     const listStack = mainStack.addStack();
     const firstStack = listStack.addStack();
     firstStack.layoutVertically();
     listStack.addSpacer(24);
     const secondStack = listStack.addStack();
     secondStack.layoutVertically();
-    console.log(firstList);
-    console.log(secondList);
     createList(firstStack, firstList, type);
     createList(secondStack, secondList, type);
     if (coursesToDisplay.length % 2 === 1) {
@@ -130,15 +135,9 @@ const createList = (mainStack, courses, type) => {
 };
 
 const BASE_URL = "https://sjusd.instructure.com";
-const TOKEN =
-  "your_token_here";
 
+let TOKEN;
 const getData = async () => {
-  if (TOKEN === "your_token_here") {
-    throw new Error(
-      "Please replace `your_token_here` with your own Canvas access token. See https://community.canvaslms.com/t5/Student-Guide/How-do-I-manage-API-access-tokens-as-a-student/ta-p/273 for more information."
-    );
-  }
   const req = new Request(
     `${BASE_URL}/api/v1/courses?enrollment_state=active&include[]=total_scores`
   );
@@ -158,6 +157,9 @@ const getData = async () => {
     { name: "asdf", current_grade: "A", current_score: 100 },
     { name: "asdf", current_grade: "A", current_score: 100 },
     { name: "asdf", current_grade: "A", current_score: 100 },
+    { name: "asdf", current_grade: "A", current_score: 100 },
+    { name: "asdf", current_grade: "A", current_score: 100 },
+    { name: "asdf", current_grade: "A", current_score: 100 },
   ];
   return mockData;
   */
@@ -166,17 +168,36 @@ const getData = async () => {
 
 let size = config.widgetFamily;
 if (!config.widgetFamily) {
-  size = "medium";
+  size = "small";
 }
-console.log(size);
-const w = await createWidget(size);
+
+let w;
 if (!config.runsInWidget) {
+  if (!args.queryParameters.token) {
+    throw new Error(
+      `To run this script in the app, go to ${URLScheme.forRunningScript()}?token=your_token, replacing your_token with your Canvas access token. Or, run this script as a widget.`
+    );
+  }
+
+  TOKEN = args.queryParameters.token;
+  if (["small", "medium", "large"].includes(args.queryParameters.size)) {
+    size = args.queryParameters.size;
+  }
+  w = await createWidget(size);
   if (size === "small") {
     await w.presentSmall();
   } else if (size === "medium") {
     await w.presentMedium();
   } else {
     await w.presentLarge();
+  }
+} else {
+  TOKEN = args.widgetParameter;
+  w = await createWidget(size);
+  if (!args.widgetParameter) {
+    throw new Error(
+      "Please configure the widget with your own Canvas access token. See https://community.canvaslms.com/t5/Student-Guide/How-do-I-manage-API-access-tokens-as-a-student/ta-p/273 for more information."
+    );
   }
 }
 Script.setWidget(w);
