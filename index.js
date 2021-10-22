@@ -12,12 +12,13 @@ const configs = {
   },
   medium: {
     titleFontSize: 24,
-    gradeFontSize: 28,
-    scoreFontSize: 24,
+    gradeFontSize: 14,
+    scoreFontSize: 12,
     footerFontSize: 12,
-    courseFontSize: 22,
-    horizontalSpace: 12,
-    spacers: false,
+    courseFontSize: 11,
+    horizontalSpace: 6,
+    listSpacerThreshold: 5,
+    stackSpacerThreshold: 7,
   },
   large: {
     titleFontSize: 24,
@@ -31,7 +32,7 @@ const configs = {
   },
 };
 
-const createWidget = async (type, size) => {
+const createWidget = async (type) => {
   const {
     stackSpacerThreshold,
     titleFontSize,
@@ -58,7 +59,26 @@ const createWidget = async (type, size) => {
   title.textColor = canvasRed;
   title.font = Font.boldSystemFont(titleFontSize);
 
-  createList(mainStack, coursesToDisplay, type);
+  console.log(type);
+  if (type === "medium") {
+    const half = Math.ceil(coursesToDisplay.length / 2);
+    console.log(half.toString());
+    const firstList = coursesToDisplay.slice(0, half);
+    const secondList = coursesToDisplay.slice(half);
+    const listStack = mainStack.addStack();
+    const firstStack = listStack.addStack();
+    firstStack.layoutVertically();
+    listStack.addSpacer(24);
+    const secondStack = listStack.addStack();
+    secondStack.layoutVertically();
+    console.log(firstList);
+    console.log(secondList);
+    createList(firstStack, firstList, type);
+    createList(secondStack, secondList, type);
+  } else {
+    createList(mainStack, coursesToDisplay, type);
+  }
+
   if (numCourses > listSpacerThreshold && numCourses <= stackSpacerThreshold) {
     mainStack.addSpacer();
   }
@@ -103,7 +123,8 @@ const createList = (mainStack, courses, type) => {
 };
 
 const BASE_URL = "https://sjusd.instructure.com";
-const TOKEN = "your_token_here";
+const TOKEN =
+  "your_token_here";
 
 const getData = async () => {
   if (TOKEN === "your_token_here") {
@@ -142,11 +163,18 @@ const getData = async () => {
 
 let size = config.widgetFamily;
 if (!config.widgetFamily) {
-  size = "small";
+  size = "medium";
 }
+console.log(size);
 const w = await createWidget(size);
 if (!config.runsInWidget) {
-  await w.presentSmall();
+  if (size === "small") {
+    await w.presentSmall();
+  } else if (size === "medium") {
+    await w.presentMedium();
+  } else {
+    await w.presentLarge();
+  }
 }
 Script.setWidget(w);
 Script.complete();
