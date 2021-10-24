@@ -1,3 +1,6 @@
+let BASE_URL = "https://sjusd.instructure.com";
+let TOKEN;
+
 const canvasRed = new Color("#F64453");
 const configs = {
   small: {
@@ -130,13 +133,11 @@ const createList = (mainStack, courses, type) => {
     const text = stack.addText(shortenedName);
     text.font = Font.lightSystemFont(courseFontSize);
     text.textColor = Color.gray();
+    text.lineLimit = 1;
     stack.bottomAlignContent();
   }
 };
 
-const BASE_URL = "https://sjusd.instructure.com";
-
-let TOKEN;
 const getData = async () => {
   const req = new Request(
     `${BASE_URL}/api/v1/courses?enrollment_state=active&include[]=total_scores`
@@ -152,14 +153,11 @@ const getData = async () => {
   }));
   /*
   const mockData = [
-    { name: "asdf", current_grade: "A", current_score: 100 },
-    { name: "asdf", current_grade: "A", current_score: 100 },
-    { name: "asdf", current_grade: "A", current_score: 100 },
-    { name: "asdf", current_grade: "A", current_score: 100 },
-    { name: "asdf", current_grade: "A", current_score: 100 },
-    { name: "asdf", current_grade: "A", current_score: 100 },
-    { name: "asdf", current_grade: "A", current_score: 100 },
-    { name: "asdf", current_grade: "A", current_score: 100 },
+    { name: "just pretend", current_grade: "A+", current_score: 101 },
+    { name: "these are", current_grade: "B", current_score: 86.7 },
+    { name: "real", current_grade: "C", current_score: 70.3 },
+    { name: "grades", current_grade: "D", current_score: 67.1 },
+    { name: "or something", current_grade: "F", current_score: 50 },
   ];
   return mockData;
   */
@@ -168,18 +166,19 @@ const getData = async () => {
 
 let size = config.widgetFamily;
 if (!config.widgetFamily) {
-  size = "small";
+  size = "medium";
 }
 
 let w;
 if (!config.runsInWidget) {
-  if (!args.queryParameters.token) {
+  if (!args.queryParameters.token || !args.queryParameters.baseUrl) {
     throw new Error(
-      `To run this script in the app, go to ${URLScheme.forRunningScript()}?token=your_token, replacing your_token with your Canvas access token. Or, run this script as a widget.`
+      `To run this script in the app, go to ${URLScheme.forRunningScript()}?baseUrl=your_canvas_baseurl&token=your_token, replacing your_canvas_baseurl with your organization's Canvas url (for example, https://sjusd.instructure.com) and your_token with your Canvas access token. Or, run this script as a widget.`
     );
   }
 
   TOKEN = args.queryParameters.token;
+  BASE_URL = args.queryParameters.baseUrl;
   if (["small", "medium", "large"].includes(args.queryParameters.size)) {
     size = args.queryParameters.size;
   }
@@ -192,7 +191,18 @@ if (!config.runsInWidget) {
     await w.presentLarge();
   }
 } else {
-  TOKEN = args.widgetParameter;
+  const errorMessage =
+    "Configure the widget paramter in the form of baseUrl|token, where baseUrl is your Canvas url and token is your Canvas access token.";
+  const rawWidgetParameter = args.widgetParameter;
+  if (!rawWidgetParameter) {
+    throw new Error(errorMessage);
+  }
+  const rawArgs = rawWidgetParameter.split("|");
+  if (rawArgs.length !== 2) {
+    throw new Error(errorMessage);
+  }
+  BASE_URL = rawArgs[0];
+  TOKEN = rawArgs[1];
   w = await createWidget(size);
   if (!args.widgetParameter) {
     throw new Error(
