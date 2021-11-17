@@ -1,4 +1,4 @@
-let BASE_URL = "https://sjusd.instructure.com";
+let BASE_URL;
 let TOKEN;
 
 const canvasRed = new Color("#F64453");
@@ -44,8 +44,7 @@ const createWidget = async (type) => {
   } = configs[type];
   // create widget
   const widget = new ListWidget();
-  widget.url =
-    URLScheme.forRunningScript() + "?token=" + TOKEN + "&size=" + type;
+  widget.url = `${BASE_URL}/grades`;
   let mainStack = widget.addStack();
   mainStack.layoutVertically();
 
@@ -119,6 +118,7 @@ const createList = (mainStack, courses, type) => {
     if (courses.length <= listSpacerThreshold) {
       mainStack.addSpacer();
     }
+    stack.url = `${BASE_URL}/courses/${course.id}/grades`;
     if (course.current_grade) {
       const text = stack.addText(course.current_grade);
       text.font = Font.semiboldSystemFont(gradeFontSize);
@@ -150,17 +150,8 @@ const getData = async () => {
     name: course.name,
     current_grade: course.enrollments[0].computed_current_grade,
     current_score: course.enrollments[0].computed_current_score,
+    id: course.id,
   }));
-  /*
-  const mockData = [
-    { name: "just pretend", current_grade: "A+", current_score: 101 },
-    { name: "these are", current_grade: "B", current_score: 86.7 },
-    { name: "real", current_grade: "C", current_score: 70.3 },
-    { name: "grades", current_grade: "D", current_score: 67.1 },
-    { name: "or something", current_grade: "F", current_score: 50 },
-  ];
-  return mockData;
-  */
   return filteredData;
 };
 
