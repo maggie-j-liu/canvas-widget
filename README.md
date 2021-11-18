@@ -13,3 +13,7 @@ A widget for macOS that allows you to view your Canvas grades in a sidebar widge
 5. Select the `Canvas` script and add your canvas URL and token as a parameter. The parameter should be formatted like `https://canvas.instructure.com|TOKEN`, where your canvas URL and token (see [these instructions](https://community.canvaslms.com/t5/Student-Guide/How-do-I-manage-API-access-tokens-as-a-student/ta-p/273) for obtaining a token) are separated by a pipe. ![configuring the widget](/assets/configure.png)
 6. Click `Done`, and your widget should display your grades!
    ![the final widget](/assets/final.png)
+
+## Demo
+
+![all the widget sizes](/assets/allwidgets.png)
